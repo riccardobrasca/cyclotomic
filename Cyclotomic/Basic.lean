@@ -7,4 +7,12 @@ open Polynomial ZMod
 
 theorem foo {P : K[X]} (hP : P ∣ cyclotomic n K) (hPirr : Irreducible P) :
     orderOf (unitOfCoprime _ hn) ≤ P.natDegree := by
-  sorry
+    sorry
+
+
+theorem bar {P : K[X]} (hP : P ∣ cyclotomic n K) (hPirr : Irreducible P) :
+    P.natDegree ≤ orderOf (unitOfCoprime _ hn) := by
+    sorry
+
+theorem final {P : K[X]} (hP : P ∣ cyclotomic n K) (hPirr : Irreducible P) :
+    P.natDegree = orderOf (unitOfCoprime _ hn) := by
