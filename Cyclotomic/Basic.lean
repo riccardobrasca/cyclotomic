@@ -26,7 +26,6 @@ theorem foo {P : K[X]} (hP : P ∣ cyclotomic n K) (hPirr : Irreducible P) (hPmo
 --on récupère que ce corps est fini et cyclique sur K (Fq)
   have : Module.Finite K L := hPmo.finite_adjoinRoot
   have : Finite L := Module.finite_of_finite K
-  have hcycl := FiniteField.instIsCyclicAlgEquivOfFinite K L
 
 --on récupère la racine que l'on a ajoutée
   let ζ' := AdjoinRoot.root P
@@ -35,10 +34,27 @@ theorem foo {P : K[X]} (hP : P ∣ cyclotomic n K) (hPirr : Irreducible P) (hPmo
 --on mont quel ζ' est une racine primitive n-ième de l'unité
   have hζ' : IsPrimitiveRoot ζ' n := by
     have : NeZero (n : L) := by
-      sorry
-      ---rw[neZero_iff]
-      ---apply NeZero.of_not_dvd
-
+      suffices NeZero (n : K) by
+        simpa using NeZero.of_injective (algebraMap K (AdjoinRoot P)).injective
+      have hf : 0 < f := by
+        apply Nat.pos_of_ne_zero
+        intro hf
+        simp [hf] at hK
+        rw [Fintype.card_eq_one_iff] at hK
+        obtain ⟨x, hx⟩ := hK
+        have : (0 : K) ≠ 1 := by
+          exact zero_ne_one' K
+        have : (0 : K) = 1 := by
+          rw [hx 0, hx 1]
+        contradiction
+      have : CharP K p := by
+        rw [CharP.charP_iff_prime_eq_zero hp.1]
+        have hf1 : f ≠ 0 := by
+          exact Nat.ne_zero_of_lt hf
+        simpa [hf1, hK] using Nat.cast_card_eq_zero K
+      apply NeZero.of_not_dvd K (p := p)
+      rw [← Nat.Prime.coprime_iff_not_dvd hp.1]
+      exact (Nat.coprime_pow_left_iff hf _ _).mp hn
     ---on réécrit l'objectif en "ζ' est une racine d'un polynôme cyclotomique"
     rw [← isRoot_cyclotomic_iff]
     ---On a tous ce qu'il faut : ζ' est racine de P et P divise un polynôme cyclotomique par hypothèse
@@ -52,20 +68,28 @@ theorem foo {P : K[X]} (hP : P ∣ cyclotomic n K) (hPirr : Irreducible P) (hPmo
   have hζ0 : ζ' ≠ 0 := by
     apply IsPrimitiveRoot.ne_zero (hζ')
     exact hn0
-
+  let ζ := Units.mk0 ζ' hζ0
+  have hζ : IsPrimitiveRoot ζ n := by
+    exact IsPrimitiveRoot.coe_units_iff.mp hζ'
 ---on introduit la base de L sur K
   let pB := AdjoinRoot.powerBasis hPirr.ne_zero
 ---On réécrit l'objectif, on passe de P.natDegree au degree de l'extension L sur K
   rw [← AdjoinRoot.powerBasis_dim hPirr.ne_zero, ← pB.finrank, ←
     FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic]
 ---on introduit le Frobenius
-  let φ := (FiniteField.frobeniusAlgEquivOfAlgebraic K L)
+  set φ := (FiniteField.frobeniusAlgEquivOfAlgebraic K L)
 
   have : (φ ^ orderOf φ) ζ' = ζ' := by simp [pow_orderOf_eq_one φ]
   simp only [AlgEquiv.coe_pow, φ, FiniteField.coe_frobeniusAlgEquivOfAlgebraic, pow_iterate, hK] at this
-  nth_rewrite 2 [← pow_one ζ'] at this
 
   rw [orderOf_dvd_iff_pow_eq_one]
   ext
-  apply hζ.zmodEquivZPowers.injective
-  sorry
+  set o := orderOf (FiniteField.frobeniusAlgEquivOfAlgebraic K (AdjoinRoot P))
+  simp
+  norm_cast
+  rw [← Nat.cast_one, ZMod.eq_iff_modEq_nat, IsPrimitiveRoot.eq_orderOf hζ]
+  have H : ζ ^ (p ^ f) ^ o = ζ := by
+    ext
+    simpa
+  nth_rewrite 2 [← pow_one ζ] at H
+  exact pow_eq_pow_iff_modEq.mp H
